@@ -109,11 +109,13 @@ int main(int argc, char* argv[]) {
 		printf("   * Invalid IP header length: %u bytes\n", size_ip);
 		return(1);
 	}
-	printf("ip_src %s\nip_dst %s\n",inet_ntoa(ip->ip_src),inet_ntoa(ip->ip_dst));
+	printf("ip_src %s\n",inet_ntoa(ip->ip_src));
+	printf("ip_dst %s\n",inet_ntoa(ip->ip_dst));
 	if((ip->ip_p)== 0x06){
 		tcp = (const struct sniff_tcp *)(packet+14+size_ip);
 		u_int size_tcp;
 		size_tcp = (tcp->th_offx2)*4;
+		//printf("%u tcp bytes\n",tcp->th_win);
 		if (size_tcp < 20) {
 		    printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
 		    return(1);
@@ -121,13 +123,18 @@ int main(int argc, char* argv[]) {
 		printf("[__________TCP_HEADER_________]\n");
 		printf("th_sport %d\nth_dport %d\n",ntohs(tcp->th_sport),ntohs(tcp->th_dport));
 		const char *payload; /* Packet payload */
+		int header_size = SIZE_ETHERNET + size_ip + size_tcp;
+		//printf("%u bytes and %d size \n",header->len,header_size);
 		payload = (char *)(packet+14+size_ip+size_tcp);
 		printf("[_____________DATA____________]\n");
-		for(size_t i=0;i<16;i++){
+		if(header_size>16){
+			header_size = 16;
+		}
+		for(size_t i=0;i<header_size;i++){
 			if(i!=0&&(i%4)==0){
 				printf("\n");
 			}
-			printf("%s%02X", (i ? " " : " "),payload[i]);
+			printf("%02x ",(unsigned char)payload[i]);
 		}
 		printf("\n");
 	}
