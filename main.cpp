@@ -4,6 +4,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+
 /* Ethernet addresses are 6 bytes */
 #define ETHER_ADDR_LEN  6
  
@@ -42,7 +43,7 @@ struct sniff_tcp {
 	tcp_seq th_seq;		/* sequence number */
 	tcp_seq th_ack;		/* acknowledgement number */
 	u_char th_offx2;	/* data offset, rsvd */
-#define TH_OFF(th)	//(((th)->th_offx2 & 0xf0) >> 4)
+#define TH_OFF(th)	(((th)->th_offx2 & 0xf0) >> 4)
 	u_char th_flags;
 #define TH_FIN 0x01
 #define TH_SYN 0x02
@@ -104,6 +105,7 @@ int main(int argc, char* argv[]) {
 	u_int size_ip;
 	ip = (const struct sniff_ip *)(packet+14);
 	size_ip = IP_HL(ip)*4;
+	//printf("size ip %u",size_ip);
 	//size_ip = (ip->ip_len)*4;
 	if (size_ip < 20) {
 		printf("   * Invalid IP header length: %u bytes\n", size_ip);
@@ -114,27 +116,25 @@ int main(int argc, char* argv[]) {
 	if((ip->ip_p)== 0x06){
 		tcp = (const struct sniff_tcp *)(packet+14+size_ip);
 		u_int size_tcp;
-		size_tcp = (tcp->th_offx2)*4;
-		//printf("%u tcp bytes\n",tcp->th_win);
+		size_tcp = TH_OFF(tcp)*4;
+		//printf("%u tcp bytes\n",size_tcp);
 		if (size_tcp < 20) {
 		    printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
 		    return(1);
 		}
 		printf("[__________TCP_HEADER_________]\n");
 		printf("th_sport %d\nth_dport %d\n",ntohs(tcp->th_sport),ntohs(tcp->th_dport));
-		const char *payload; /* Packet payload */
-		int header_size = SIZE_ETHERNET + size_ip + size_tcp;
-		//printf("%u bytes and %d size \n",header->len,header_size);
-		payload = (char *)(packet+14+size_ip+size_tcp);
+		const unsigned char *payload; /* Packet payload */
+		payload = (unsigned char *)(packet+14+size_ip+size_tcp);
 		printf("[_____________DATA____________]\n");
-		if(header_size>16){
-			header_size = 16;
-		}
-		for(size_t i=0;i<header_size;i++){
+		//printf("%u , %u\n\n",header->len,size_ip + size_tcp);
+		size_t data_size = (header->len) - (size_ip +size_tcp);
+		if (data_size>16){data_size = 16;}
+		for(int i = 0; i < data_size; i++) {
 			if(i!=0&&(i%4)==0){
 				printf("\n");
 			}
-			printf("%02x ",(unsigned char)payload[i]);
+			printf("%02x ",payload[i]);
 		}
 		printf("\n");
 	}
